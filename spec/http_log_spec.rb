@@ -41,6 +41,7 @@ describe HttpLog do
             log.should include(HttpLog::LOG_PREFIX + "Status: 200")
             log.should include(HttpLog::LOG_PREFIX + "Benchmark: ")
             log.should include(HttpLog::LOG_PREFIX + "Response:#{adapter.expected_response_body}")
+            log.should_not include(HttpLog::TRUNCATED_SUFFIX)
 
             res.should be_a adapter.response_should_be if adapter.respond_to? :response_should_be
           end
@@ -58,6 +59,7 @@ describe HttpLog do
             log.should include(HttpLog::LOG_PREFIX + "Status: 200")
             log.should include(HttpLog::LOG_PREFIX + "Benchmark: ")
             log.should include(HttpLog::LOG_PREFIX + "Response:#{adapter.expected_response_body}")
+            log.should_not include(HttpLog::TRUNCATED_SUFFIX)
 
             res.should be_a adapter.response_should_be if adapter.respond_to? :response_should_be
           end
@@ -127,6 +129,13 @@ describe HttpLog do
           log.should_not include(HttpLog::LOG_PREFIX + "Connecting: #{@host}:#{@port}")
         end
 
+        it "should truncate the log if enabled" do
+          HttpLog.options[:truncate]   = true
+          HttpLog.options[:max_length] = 100
+          adapter.send_get_request
+          log.should include(HttpLog::TRUNCATED_SUFFIX)
+        end
+
         if adapter_class.method_defined? :send_post_request
           it "should not log POST data if disabled" do
             HttpLog.options[:log_data] = false
@@ -144,6 +153,13 @@ describe HttpLog do
             HttpLog.options[:log_benchmark] = false
             adapter.send_post_request
             log.should_not include(HttpLog::LOG_PREFIX + "Benchmark:")
+          end
+
+          it "should truncate the log if enabled" do
+            HttpLog.options[:truncate]   = true
+            HttpLog.options[:max_length] = 100
+            adapter.send_post_request
+            log.should include(HttpLog::TRUNCATED_SUFFIX)
           end
         end
       end

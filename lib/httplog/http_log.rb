@@ -16,10 +16,13 @@ module HttpLog
     :log_benchmark         => true,
     :compact_log           => false,
     :url_whitelist_pattern => /.*/,
-    :url_blacklist_pattern => nil
+    :url_blacklist_pattern => nil,
+    :truncate              => false,
+    :max_length            => 1024,
   }
 
-  LOG_PREFIX = "[httplog] ".freeze
+  LOG_PREFIX       = "[httplog] ".freeze
+  TRUNCATED_SUFFIX = " (truncated)".freeze
 
   class << self
     def options
@@ -39,7 +42,9 @@ module HttpLog
     end
 
     def log(msg)
-      @@options[:logger].add(@@options[:severity]) { LOG_PREFIX + msg }
+      @@options[:logger].add(@@options[:severity]) do
+        LOG_PREFIX + formatted_message(msg)
+      end
     end
 
     def log_connection(host, port = nil)
@@ -95,6 +100,18 @@ module HttpLog
       return unless options[:compact_log]
       status = Rack::Utils.status_code(status) unless status == /\d{3}/
       log("#{method.to_s.upcase} #{uri} completed with status code #{status} in #{seconds} seconds")
+    end
+
+    def formatted_message(msg)
+      if options[:truncate]
+        truncate(msg, options[:max_length])
+      else
+        msg
+      end
+    end
+
+    def truncate(msg, length)
+      msg[0...length] + TRUNCATED_SUFFIX
     end
   end
 end
