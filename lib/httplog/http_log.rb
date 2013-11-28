@@ -103,7 +103,7 @@ module HttpLog
     end
 
     def formatted_message(msg)
-      if options[:truncate]
+      if options[:truncate] && msg.length > options[:max_length]
         truncate(msg, options[:max_length])
       else
         msg

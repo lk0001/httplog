@@ -20,6 +20,10 @@ class HTTPBaseAdapter
     "\n<html>"
   end
 
+  def self.possible_to_truncate?
+    true
+  end
+
   def self.is_libcurl?
     false
   end

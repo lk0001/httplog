@@ -67,6 +67,8 @@ describe HttpLog do
       end
 
       context "with custom config" do
+        truncate_test_method = adapter_class.possible_to_truncate? ? :should : :should_not
+
         it "should log at other levels" do
           HttpLog.options[:severity] = Logger::Severity::INFO
           adapter.send_get_request
@@ -133,7 +135,14 @@ describe HttpLog do
           HttpLog.options[:truncate]   = true
           HttpLog.options[:max_length] = 100
           adapter.send_get_request
-          log.should include(HttpLog::TRUNCATED_SUFFIX)
+          log.send(truncate_test_method, include(HttpLog::TRUNCATED_SUFFIX))
+        end
+
+        it "should not truncate the log if enabled but response is short enough" do
+          HttpLog.options[:truncate]   = true
+          HttpLog.options[:max_length] = 1000
+          adapter.send_get_request
+          log.should_not include(HttpLog::TRUNCATED_SUFFIX)
         end
 
         if adapter_class.method_defined? :send_post_request
@@ -155,11 +164,18 @@ describe HttpLog do
             log.should_not include(HttpLog::LOG_PREFIX + "Benchmark:")
           end
 
-          it "should truncate the log if enabled" do
+          it "should truncate the log if enabled and response is too long" do
             HttpLog.options[:truncate]   = true
             HttpLog.options[:max_length] = 100
             adapter.send_post_request
-            log.should include(HttpLog::TRUNCATED_SUFFIX)
+            log.send(truncate_test_method, include(HttpLog::TRUNCATED_SUFFIX))
+          end
+
+          it "should not truncate the log if enabled but response is short enough" do
+            HttpLog.options[:truncate]   = true
+            HttpLog.options[:max_length] = 1000
+            adapter.send_post_request
+            log.should_not include(HttpLog::TRUNCATED_SUFFIX)
           end
         end
       end
