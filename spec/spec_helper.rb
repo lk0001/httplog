@@ -37,4 +37,3 @@ RSpec.configure do |config|
     @log.string
   end
 end
-

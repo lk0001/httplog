@@ -1,9 +1,11 @@
 require "net/http"
 require "logger"
 require "benchmark"
+require "httplog/extensions/http_data_filter"
 
 module HttpLog
   DEFAULT_LOGGER  = Logger.new($stdout)
+  DEFAULT_FILTER  = Extensions::HttpDataFilter
   DEFAULT_OPTIONS = {
     :logger                => DEFAULT_LOGGER,
     :severity              => Logger::Severity::DEBUG,
@@ -19,6 +21,10 @@ module HttpLog
     :url_blacklist_pattern => nil,
     :truncate              => false,
     :max_length            => 1024,
+    :filter_data           => false,
+    :filter_class          => DEFAULT_FILTER,
+    :filtered_keys         => [],
+    :filtered_value        => DEFAULT_FILTER::FILTERED_VALUE,
   }
 
   LOG_PREFIX       = "[httplog] ".freeze
@@ -31,6 +37,13 @@ module HttpLog
 
     def reset_options!
       @@options = DEFAULT_OPTIONS.clone
+    end
+
+    def filter_object
+      options[:filter_object] ||= options[:filter_class].new(
+                                    filtered_keys: options[:filtered_keys],
+                                    filtered_value: options[:filtered_value]
+                                  )
     end
 
     def url_approved?(url)
@@ -93,6 +106,7 @@ module HttpLog
 
     def log_data(data)
       return if options[:compact_log] || !options[:log_data]
+      data = filter_object.filter(data) if options[:filter_data]
       log("Data: #{data}")
     end
 
@@ -102,7 +116,7 @@ module HttpLog
       log("#{method.to_s.upcase} #{uri} completed with status code #{status} in #{seconds} seconds")
     end
 
-    def formatted_message(msg)
+    def formatted_message(msg) # TODO refactor
       if options[:truncate] && msg.length > options[:max_length]
         truncate(msg, options[:max_length])
       else

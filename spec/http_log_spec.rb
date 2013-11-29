@@ -177,6 +177,14 @@ describe HttpLog do
             adapter.send_post_request
             log.should_not include(HttpLog::TRUNCATED_SUFFIX)
           end
+
+          it "should filter data if filtering is enabled" do
+            HttpLog.options[:filter_data]    = true
+            HttpLog.options[:filtered_keys]  = [:foo]
+            HttpLog.options[:filtered_value] = "[FV]"
+            adapter.send_post_request
+            log.should include("foo=[FV]")
+          end
         end
       end
 
