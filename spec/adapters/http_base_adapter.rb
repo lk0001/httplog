@@ -6,6 +6,7 @@ class HTTPBaseAdapter
     @protocol = protocol
     @headers = { "accept" => "*/*", "foo" => "bar" }
     @data = "foo=bar&bar=foo"
+    @json_data = {foo: "bar", bar: "foo"}.to_json
     @params = {'foo' => 'bar', 'bar' => 'foo'}
   end
 
@@ -14,6 +15,10 @@ class HTTPBaseAdapter
   end
 
   def send_post_form_request
+  end
+
+  def send_json_post_request
+    send_post_request(@json_data)
   end
 
   def expected_response_body

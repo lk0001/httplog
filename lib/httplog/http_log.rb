@@ -1,11 +1,11 @@
 require "net/http"
 require "logger"
 require "benchmark"
-require "httplog/extensions/http_data_filter"
+require "httplog/extensions/data_filters/factory"
 
 module HttpLog
   DEFAULT_LOGGER  = Logger.new($stdout)
-  DEFAULT_FILTER  = Extensions::HttpDataFilter
+  DEFAULT_FILTER  = Extensions::DataFilters::Factory
   DEFAULT_OPTIONS = {
     :logger                => DEFAULT_LOGGER,
     :severity              => Logger::Severity::DEBUG,

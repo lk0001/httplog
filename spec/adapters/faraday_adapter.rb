@@ -7,11 +7,11 @@ class FaradayAdapter < HTTPBaseAdapter
     end
   end
 
-  def send_post_request
+  def send_post_request(body=@data)
     connection.post do |req|
       req.url parse_uri.to_s
       req.headers = @headers
-      req.body = @data
+      req.body = body
     end
   end
 
