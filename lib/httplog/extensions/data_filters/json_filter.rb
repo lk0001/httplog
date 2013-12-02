@@ -22,13 +22,19 @@ module Extensions
 
       def raw_filter(hash)
         filtered_keys.each do |filtered_key|
-          hash.each do |k, v|
-            if k.match(/#{filtered_key}/i)
-              hash[k] = filtered_value
-            end
-          end
+          hash = filter_one(hash, filtered_key)
         end
         hash
+      end
+
+      def filter_one(hash, filtered_key)
+        hash.each do |k, v|
+          if k.match(/#{filtered_key}/i)
+            hash[k] = filtered_value
+          elsif v.is_a?(Hash)
+            hash[k] = filter_one(v, filtered_key)
+          end
+        end
       end
 
     end
