@@ -28,6 +28,7 @@ module Extensions
       end
 
       def filter_one(json, filtered_key)
+        return json unless json.is_a?(Array) || json.is_a?(Hash)
         if json.is_a?(Array) # TODO refactor this
           json.each_index do |index|
             json[index] = filter_one(json[index], filtered_key)

@@ -7,6 +7,7 @@ describe Extensions::DataFilters::JsonFilter do
   let(:http_data) { "username=testuser&password=mypass&secret=mysecret" }
   let(:json_data) { {username: "testuser", password: "mypass", secret: "mysecret"}.to_json }
   let(:json_array_data) { [{username: "testuser", password: "mypass", secret: "mysecret"}].to_json }
+  let(:json_array_data_2) { ["username", "password", "secret"].to_json }
   let(:matching_data) { {username: "testuser", password_confirmation: "mypass", secret: "mysecret"}.to_json }
   let(:case_insensitive_data) { {userName: "testuser", PasSword_Confirmation: "mypass", Secret: "mysecret"}.to_json }
   let(:nested_json_data) { {credentials: {username: "testuser", password: "mypass"}, secret: "mysecret"}.to_json }
@@ -37,6 +38,11 @@ describe Extensions::DataFilters::JsonFilter do
   it "replaces exact keys' values with filtered_value" do
     subject.filter(json_array_data).should \
       eq([{username: "testuser", password: "[FV]", secret: "[FV]"}].to_json)
+  end
+
+  it "doesn't change simple arrays" do
+    subject.filter(json_array_data_2).should \
+      eq(json_array_data_2)
   end
 
   it "replaces matching keys' values with filtered_value" do
