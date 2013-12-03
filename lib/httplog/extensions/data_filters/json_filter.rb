@@ -15,24 +15,30 @@ module Extensions
 
       def suitable?(data)
         return if data.nil?
-        data.match(/\{.*\}/)
+        data.match(/\A\[?\{.*\}\]?\z/)
       end
 
       private
 
-      def raw_filter(hash)
+      def raw_filter(json)
         filtered_keys.each do |filtered_key|
-          hash = filter_one(hash, filtered_key)
+          json = filter_one(json, filtered_key)
         end
-        hash
+        json
       end
 
-      def filter_one(hash, filtered_key)
-        hash.each do |k, v|
-          if k.match(/#{filtered_key}/i)
-            hash[k] = @replacer.replace(v)
-          elsif v.is_a?(Hash)
-            hash[k] = filter_one(v, filtered_key)
+      def filter_one(json, filtered_key)
+        if json.is_a?(Array) # TODO refactor this
+          json.each_index do |index|
+            json[index] = filter_one(json[index], filtered_key)
+          end
+        else
+          json.each do |k, v|
+            if k.match(/#{filtered_key}/i)
+              json[k] = @replacer.replace(v)
+            elsif v.is_a?(Hash) || v.is_a?(Array)
+              json[k] = filter_one(v, filtered_key)
+            end
           end
         end
       end

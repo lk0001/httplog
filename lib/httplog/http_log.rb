@@ -12,30 +12,31 @@ module HttpLog
   DEFAULT_CUSTOM_FILTER   = Extensions::DataFilters::Factory
   DEFAULT_CUSTOM_REPLACER = Extensions::Replacers::HalfReplacer
   DEFAULT_OPTIONS = {
-    :logger                => DEFAULT_LOGGER,
-    :severity              => Logger::Severity::DEBUG,
-    :log_connect           => true,
-    :log_request           => true,
-    :log_headers           => false,
-    :log_data              => true,
-    :log_status            => true,
-    :log_response          => true,
-    :log_benchmark         => true,
-    :compact_log           => false,
-    :url_whitelist_pattern => /.*/,
-    :url_blacklist_pattern => nil,
-    :truncate              => false,
-    :max_length            => 1024,
-    :filter_data           => false,
-    :filter_class          => DEFAULT_FILTER,
-    :filter_replacer       => DEFAULT_REPLACER,
-    :filtered_keys         => [],
-    :filtered_value        => DEFAULT_FILTER::FILTERED_VALUE,
-    :filter_custom_data    => false,
-    :custom_filter_class   => DEFAULT_CUSTOM_FILTER,
+    :logger                 => DEFAULT_LOGGER,
+    :severity               => Logger::Severity::DEBUG,
+    :log_connect            => true,
+    :log_request            => true,
+    :log_headers            => false,
+    :log_data               => true,
+    :log_status             => true,
+    :log_response           => true,
+    :log_benchmark          => true,
+    :compact_log            => false,
+    :url_whitelist_pattern  => /.*/,
+    :url_blacklist_pattern  => nil,
+    :truncate               => false,
+    :max_length             => 1024,
+    :filter_data            => false,
+    :filter_class           => DEFAULT_FILTER,
+    :filter_replacer        => DEFAULT_REPLACER,
+    :filtered_keys          => [],
+    :filtered_value         => DEFAULT_FILTER::FILTERED_VALUE,
+    :filter_custom_data     => false,
+    :filter_custom_response => false,
+    :custom_filter_class    => DEFAULT_CUSTOM_FILTER,
     :custom_filter_replacer => DEFAULT_CUSTOM_REPLACER,
-    :custom_filtered_keys  => [],
-    :custom_filtered_value => DEFAULT_CUSTOM_FILTER::FILTERED_VALUE,
+    :custom_filtered_keys   => [],
+    :custom_filtered_value  => DEFAULT_CUSTOM_FILTER::FILTERED_VALUE, # change to replacer::defvalue
   }
 
   LOG_PREFIX       = "[httplog] ".freeze
@@ -52,18 +53,18 @@ module HttpLog
 
     def filter_object
       options[:filter_object] ||= options[:filter_class].new(
-                                    replacer: options[:filter_replacer],
-                                    filtered_keys: options[:filtered_keys],
-                                    filtered_value: options[:filtered_value],
-                                  )
+        replacer: options[:filter_replacer],
+        filtered_keys: options[:filtered_keys],
+        filtered_value: options[:filtered_value],
+      )
     end
 
     def custom_filter_object
       options[:custom_filter_object] ||= options[:custom_filter_class].new(
-                                    replacer: options[:custom_filter_replacer],
-                                    filtered_keys: options[:custom_filtered_keys],
-                                    filtered_value: options[:custom_filtered_value],
-                                  )
+        replacer: options[:custom_filter_replacer],
+        filtered_keys: options[:custom_filtered_keys],
+        filtered_value: options[:custom_filtered_value],
+      )
     end
 
     def url_approved?(url)
@@ -117,17 +118,19 @@ module HttpLog
         if encoding =~ /gzip/
           sio = StringIO.new( body.to_s )
           gz = Zlib::GzipReader.new( sio )
-          log("Response: (deflated)\n#{gz.read}")
+          data = potentially_apply_filter(gz.read, custom_filter_object, options[:filter_custom_response])
+          log("Response: (deflated)\n#{data}")
         else
-          log("Response:\n#{body.to_s}")
+          data = potentially_apply_filter(body.to_s, custom_filter_object, options[:filter_custom_response])
+          log("Response:\n#{data}")
         end
       end
     end
 
     def log_data(data)
       return if options[:compact_log] || !options[:log_data]
-      data = filter_object.filter(data) if options[:filter_data]
-      data = custom_filter_object.filter(data) if options[:filter_custom_data]
+      data = potentially_apply_filter(data, filter_object, options[:filter_data])
+      data = potentially_apply_filter(data, custom_filter_object, options[:filter_custom_data])
       log("Data: #{data}")
     end
 
@@ -147,6 +150,14 @@ module HttpLog
 
     def truncate(msg, length)
       msg[0...length] + TRUNCATED_SUFFIX
+    end
+
+    def potentially_apply_filter(data, filter_object, apply) # TODO refactor
+      if apply
+        filter_object.filter(data)
+      else
+        data
+      end
     end
   end
 end

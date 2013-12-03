@@ -1,6 +1,6 @@
 require "httplog/extensions/data_filters/http_filter"
 require "httplog/extensions/data_filters/json_filter"
-require "httplog/extensions/data_filters/base_filter"
+require "httplog/extensions/data_filters/empty_filter"
 
 module Extensions
   module DataFilters
@@ -29,6 +29,7 @@ module Extensions
         @filters.each do |filter|
           return filter if filter.suitable?(data)
         end
+        nil
       end
 
       def filter_classes
