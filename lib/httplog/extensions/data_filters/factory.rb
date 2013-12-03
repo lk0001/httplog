@@ -6,7 +6,7 @@ module Extensions
   module DataFilters
     class Factory
 
-      FILTERED_VALUE = BaseFilter::FILTERED_VALUE
+      FILTERED_VALUE = "[FILTERED]".freeze
 
       def initialize(opts={})
         @filters = []

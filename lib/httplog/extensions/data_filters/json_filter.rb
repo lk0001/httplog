@@ -30,7 +30,7 @@ module Extensions
       def filter_one(hash, filtered_key)
         hash.each do |k, v|
           if k.match(/#{filtered_key}/i)
-            hash[k] = filtered_value
+            hash[k] = @replacer.replace(v)
           elsif v.is_a?(Hash)
             hash[k] = filter_one(v, filtered_key)
           end

@@ -52,7 +52,6 @@ describe Extensions::DataFilters::JsonFilter do
       eq({secret_credentials: "[FV]", secret: "[FV]"}.to_json)
   end
 
-
   context "with default filtered_value" do
     subject { described_class.new(filtered_keys: filtered_keys) }
 

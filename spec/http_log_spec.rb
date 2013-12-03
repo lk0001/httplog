@@ -195,6 +195,24 @@ describe HttpLog do
               log.should include('"foo":"[FV]"')
             end
           end
+
+          describe "with custom data filtering enabled" do
+            before(:each) do
+              HttpLog.options[:filter_custom_data]    = true
+              HttpLog.options[:custom_filtered_keys]  = [:foo]
+              HttpLog.options[:custom_filtered_value] = "*"
+            end
+
+            it "should filter http data" do
+              adapter.send_post_request
+              log.should include("foo=**r")
+            end
+
+            it "should filter json data" do
+              adapter.send_json_post_request
+              log.should include('"foo":"**r"')
+            end
+          end
         end
       end
 

@@ -1,14 +1,14 @@
+require "httplog/extensions/replacers/full_replacer"
+
 module Extensions
   module DataFilters
     class BaseFilter
 
-      FILTERED_VALUE = "[FILTERED]".freeze
-
-      attr_accessor :filtered_keys, :filtered_value
+      attr_accessor :filtered_keys
 
       def initialize(opts={})
-        self.filtered_keys  = opts.fetch(:filtered_keys, [])
-        self.filtered_value = opts.fetch(:filtered_value, FILTERED_VALUE)
+        @filtered_keys  = opts.fetch(:filtered_keys, [])
+        @replacer       = opts.fetch(:replacer, default_replacer).new(opts)
       end
 
       def filter(data)
@@ -17,6 +17,12 @@ module Extensions
 
       def suitable?(data)
         raise "override this method in subclass"
+      end
+
+      private
+
+      def default_replacer
+        Extensions::Replacers::FullReplacer
       end
 
     end

@@ -37,7 +37,7 @@ module Extensions
       def filter_one(data, filtered_key)
         data.map do |p|
           if p.first.match(/#{filtered_key}/i)
-            [p.first, filtered_value]
+            [p.first, @replacer.replace(p[1])]
           else
             p
           end

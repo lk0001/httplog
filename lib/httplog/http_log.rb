@@ -2,10 +2,15 @@ require "net/http"
 require "logger"
 require "benchmark"
 require "httplog/extensions/data_filters/factory"
+require "httplog/extensions/replacers/full_replacer"
+require "httplog/extensions/replacers/half_replacer"
 
 module HttpLog
-  DEFAULT_LOGGER  = Logger.new($stdout)
-  DEFAULT_FILTER  = Extensions::DataFilters::Factory
+  DEFAULT_LOGGER          = Logger.new($stdout)
+  DEFAULT_FILTER          = Extensions::DataFilters::Factory
+  DEFAULT_REPLACER        = Extensions::Replacers::FullReplacer
+  DEFAULT_CUSTOM_FILTER   = Extensions::DataFilters::Factory
+  DEFAULT_CUSTOM_REPLACER = Extensions::Replacers::HalfReplacer
   DEFAULT_OPTIONS = {
     :logger                => DEFAULT_LOGGER,
     :severity              => Logger::Severity::DEBUG,
@@ -23,8 +28,14 @@ module HttpLog
     :max_length            => 1024,
     :filter_data           => false,
     :filter_class          => DEFAULT_FILTER,
+    :filter_replacer       => DEFAULT_REPLACER,
     :filtered_keys         => [],
     :filtered_value        => DEFAULT_FILTER::FILTERED_VALUE,
+    :filter_custom_data    => false,
+    :custom_filter_class   => DEFAULT_CUSTOM_FILTER,
+    :custom_filter_replacer => DEFAULT_CUSTOM_REPLACER,
+    :custom_filtered_keys  => [],
+    :custom_filtered_value => DEFAULT_CUSTOM_FILTER::FILTERED_VALUE,
   }
 
   LOG_PREFIX       = "[httplog] ".freeze
@@ -41,8 +52,17 @@ module HttpLog
 
     def filter_object
       options[:filter_object] ||= options[:filter_class].new(
+                                    replacer: options[:filter_replacer],
                                     filtered_keys: options[:filtered_keys],
-                                    filtered_value: options[:filtered_value]
+                                    filtered_value: options[:filtered_value],
+                                  )
+    end
+
+    def custom_filter_object
+      options[:custom_filter_object] ||= options[:custom_filter_class].new(
+                                    replacer: options[:custom_filter_replacer],
+                                    filtered_keys: options[:custom_filtered_keys],
+                                    filtered_value: options[:custom_filtered_value],
                                   )
     end
 
@@ -107,6 +127,7 @@ module HttpLog
     def log_data(data)
       return if options[:compact_log] || !options[:log_data]
       data = filter_object.filter(data) if options[:filter_data]
+      data = custom_filter_object.filter(data) if options[:filter_custom_data]
       log("Data: #{data}")
     end
 
