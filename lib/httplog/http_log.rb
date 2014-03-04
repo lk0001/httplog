@@ -37,6 +37,10 @@ module HttpLog
     :custom_filter_replacer => DEFAULT_CUSTOM_REPLACER,
     :custom_filtered_keys   => [],
     :custom_filtered_value  => DEFAULT_CUSTOM_FILTER::FILTERED_VALUE, # change to replacer::defvalue
+    :only_specified_headers => false,
+    :logged_headers         => [],
+    :masked_headers         => [],
+    :to_be_masked_regex     => /.*/,
   }
 
   LOG_PREFIX       = "[httplog] ".freeze
@@ -67,6 +71,12 @@ module HttpLog
       )
     end
 
+    def custom_replacer_object
+      options[:custom_replacer_object] ||= options[:custom_filter_replacer].new(
+        filtered_value: options[:custom_filtered_value]
+      )
+    end
+
     def url_approved?(url)
       unless @@options[:url_blacklist_pattern].nil?
         return false if url.to_s.match(@@options[:url_blacklist_pattern])
@@ -93,7 +103,17 @@ module HttpLog
 
     def log_headers(headers = {})
       return if options[:compact_log] || !options[:log_headers]
+      if options[:only_specified_headers]
+        headers = headers.select { |k,v| options[:logged_headers].include?(k) }
+      end
       headers.each do |key,value|
+        if options[:masked_headers].include?(key) && options[:to_be_masked_regex]
+          to_be_masked_array = value.scan(options[:to_be_masked_regex]).flatten
+          to_be_masked_array.each do |to_be_masked|
+            masked_substring = custom_replacer_object.replace(to_be_masked)
+            value = value.gsub(to_be_masked, masked_substring)
+          end
+        end
         log("Header: #{key}: #{value}")
       end
     end
